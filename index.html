@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>urbanLAB</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<link href="css/css.css" rel="stylesheet" type="text/css">
+	</head>
+<body>
+
+<div id="scene">
+	<div id="startScreen">
+  	<img id="logo" src="icon-white.svg" title="urbanLAB VR">
+		
+		<p id="loadingWrap">
+  		Nous préparons le lab :)<br>
+  		<span id="loading"></span>
+    </p>
+	</div>
+</div>
+
+<div id="dev" style="position:absolute;top:0;right:0;z-index:10000000000000;color:white;background:black;font-size:16px;display:none;">Hi</div>
+
+<script src="js/external/jquery-2.1.1.min.js"></script>
+<script src="js/external/jstorage.js"></script>
+<script src="js/external/three.min.js"></script>
+<script src="js/external/NoSleep.min.js"></script>
+<script src="js/external/helvetiker_regular.typeface.js"></script>
+<script src="js/StereoEffect.js"></script>
+<script src="js/DeviceOrientationControls.js"></script>
+<script src="js/OrbitControls.js"></script>
+<script src="js/external/has.js"></script>
+<script src="js/Cardboard.js"></script>
+<script src="js/Stats.js"></script>
+<script>
+	var root = this;
+	var SCALE = 3;
+	var isMobile = true;
+</script>
+<script src="js/Cursor.js"></script>
+<script src="js/RoomShowroom.js"></script>
+<script src="js/RoomCenter.js"></script>
+<script src="js/RoomCrea.js"></script>
+
+<script src="js/MainController.js"></script>
+<script src="js/PhotoSphere.js"></script>
+<script src="js/DetailImage.js"></script>
+<script src="js/Video.js"></script>
+<script src="js/NavigationArrow.js"></script>
+<script>
+$(function() {
+	// Initiate Insomnia PhoneGap Plugin
+	try {
+		cordova.exec(function(){}, function(){}, "Insomnia", "keepAwake", []);
+	} catch (e){ }
+	
+	var noSleep = new NoSleep();
+	noSleep.enable();
+	load();
+});
+
+// initialize the screen
+var cardboard, mainController, cursor;
+
+var textures = {
+  'LabelFunkyTown':{
+    url:'images/LabelFunkyTown.svg',
+    texture:null
+  },
+  'LabelEvolyon':{
+    url:'images/LabelEvolyon.svg',
+    texture:null
+  },
+  'LabelEvolyon2':{
+    url:'images/LabelEvolyon2.svg',
+    texture:null
+  },
+  'LabelProxemie':{
+    url:'images/LabelProxemie.svg',
+    texture:null
+  },
+  'LabelRectoVerso':{
+    url:'images/LabelRectoVerso.svg',
+    texture:null
+  },
+  'LabelHackagate':{
+    url:'images/LabelHackagate.svg',
+    texture:null
+  },
+  'Pin':{
+    url:'images/Pin.svg',
+    texture:null
+  },
+  'PanoCenter':{
+    url:'panos/PANO_Center.jpg',
+    texture:null
+  },
+  'PanoShowroom':{
+    url:'panos/PANO_Showroom.jpg',
+    texture:null
+  },
+  'PanoCrea':{
+    url:'panos/PANO_Crea.jpg',
+    texture:null
+  },
+  'TextShowroom':{
+    url:'images/TextShowroom.svg',
+    texture:null
+  },
+  'TextCrea':{
+    url:'images/TextCrea.svg',
+    texture:null
+  },
+  'TextFab':{
+    url:'images/TextFab.svg',
+    texture:null
+  },
+  'urbanLAB':{
+    url:'images/urbanLAB.svg',
+    texture:null
+  }
+};
+
+var videos = [
+	{
+  	id:'videoFunkytown',
+  	url:'videos/Funkytown.mp4'
+  }, 
+  {
+    id:'videoEvolyon',
+    url:'videos/Evolyon.mp4'
+  },
+  {
+    id:'videoHackagate',
+    url:'videos/Hackagate.mp4'
+  },
+  {
+    id:'videoProxemie',
+    url:'videos/Proxemie.mp4'
+  },
+  {
+    id:'videoRectoVerso',
+    url:'videos/RectoVerso.mp4'
+  }
+];
+
+var nbTextures = 0;
+
+// Set the number of textures to load
+for(var i in textures) {
+  nbTextures++;
+}
+
+function load() {	
+	for (var i = 0; i < videos.length; i++) {
+  	var video = $('<video></video>')
+  	  .attr('id',videos[i].id)
+  	  .attr('class','video')
+  	  .attr('style','display:none');
+  	  
+    var source = $('<source>')
+      .attr('src',videos[i].url)
+      .attr('type','video/mp4; codecs="avc1.42E01E, mp4a.40.2"');
+    
+    video.append(source).appendTo($('body'));
+	}
+    
+	for(var i in textures) {
+  	var _i = i;
+    textures[_i].texture = THREE.ImageUtils.loadTexture(textures[_i].url, undefined, function(texture){
+      textureLoadedCallback();
+    });
+  }
+}
+
+
+var texturesLoaded = 0;
+
+function textureLoadedCallback() {
+  texturesLoaded++;
+  
+  $('#loading').text(texturesLoaded+" / "+nbTextures);
+  
+  if (texturesLoaded == nbTextures) {
+    setup();
+  }
+}
+
+function setup() {
+	$('#startScreen').fadeOut(4000);
+  
+	cardboard = new Cardboard();
+
+	mainController = new MainController({
+  	showAugmentedVideos: true
+	});
+	cardboard.scene.add(mainController);
+
+	cursor = new Cursor();
+	cardboard.camera.add(cursor);
+	cursor.position.z = -3 * SCALE;
+	cursor.lookAt(cardboard.camera.position);
+
+
+	cardboard.effect.separation = 0.6;
+
+	if (!has.mobile) {
+		setTimeout(function() {
+			cardboard.orbitControls.target.set(0, 0, 1);
+		}, 0);
+	}
+
+	cardboard.update = function() {
+		Cardboard.prototype.update.call(this);
+		mainController.update();
+	};
+
+	document.getElementById('scene').appendChild(cardboard.renderer.domElement);
+  
+	// Start
+	root.MainController = MainController;
+	root.Cursor = Cursor;
+	
+}
+
+
+$(document).on('click', function(){
+  if (isMobile) {
+    $('.video').each(function(){
+      $(this).get(0).play();
+      var _this = $(this);
+      
+      setTimeout(
+        function () {
+          _this.get(0).pause();
+        },
+      1000);
+    });
+  }
+});
+
+</script>
+
+
+</body>
+</html>

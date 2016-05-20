@@ -13,6 +13,7 @@ RectoVerso.mp4
 You can edit all of this in `index.html` file:
 
 ```json
+[	
 	{
   	id:'videoFunkytown',
   	url:'videos/Funkytown.mp4'
@@ -33,4 +34,5 @@ You can edit all of this in `index.html` file:
     id:'videoRectoVerso',
     url:'videos/RectoVerso.mp4'
   }
+]
 ```

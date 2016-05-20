@@ -12,7 +12,7 @@ RectoVerso.mp4
 
 You can edit all of this in `index.html` file:
 
-```json
+```javascript
 [	
 	{
   	id:'videoFunkytown',

@@ -1,4 +1,4 @@
-![urbanLAB VR](./icon.png)
+![urbanLAB VR](./icon.png =300x)
 
 # urbanLAB VR Cardboard
 Cardboard (VR) navigable photospheres with Three.js.
